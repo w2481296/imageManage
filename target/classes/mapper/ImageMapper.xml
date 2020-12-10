@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+	<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+		"http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper namespace="cn.tedu.store.mapper.ImageMapper">
+	<!-- 管理员查询和非登陆查询-->
+	<select id="selectinstockByName" resultType="java.util.Map" parameterType="java.lang.String"
+	useCache="false" flushCache="true">
+		select
+		wi.id as id,
+		CASE wi.status WHEN 0 THEN '公有镜像'
+ 			WHEN 1 THEN '私有镜像' END as status,
+		wi.repository as repository,
+		wi.tag as tag,
+		wi.imageId as imageId,
+		wi.size as size,
+		wi.download as download,
+		wi.downorder as downorder,
+		wi.createUser as createUser,
+		date_format(wi.updateDate,'%Y-%c-%d %H:%i:%S') AS updateDate,
+		date_format(wi.createDate,'%Y-%c-%d %H:%i:%S') AS createDate
+		from
+		w_image wi
+		<where> 1=1
+			<if test="inName!=null and inName!=''">
+				AND wi.repository like CONCAT('%',#{inName},'%')
+			</if>
+			<if test="inTime1!=null and inTime1!=''">
+				AND DATE_FORMAT(wi.createDate, '%Y-%m-%d')&gt;=#{inTime1}
+			</if>
+			<if test="inTime2!=null and inTime2!=''">
+				AND DATE_FORMAT(wi.createDate, '%Y-%m-%d')&lt;=#{inTime2}
+			</if>
+				AND wi.status='0'
+		</where>
+		group by id
+	</select>
+	
+	<!-- 用户查询 -->
+	<select id="selectimage" resultType="java.util.Map" parameterType="java.lang.String"
+	useCache="false" flushCache="true">
+		select
+		wi.id as id,
+		CASE wi.status WHEN 0 THEN '公有镜像'
+ 			WHEN 1 THEN '私有镜像' END as status,
+		wi.repository as repository,
+		wi.tag as tag,
+		wi.imageId as imageId,
+		wi.size as size,
+		wi.download as download,
+		wi.downorder as downorder,
+		wi.createUser as createUser,
+		date_format(wi.updateDate,'%Y-%c-%d %H:%i:%S') AS updateDate,
+		date_format(wi.createDate,'%Y-%c-%d %H:%i:%S') AS createDate
+		from
+		w_image wi
+		<where> 1=1
+			<if test="inName!=null and inName!=''">
+				AND wi.repository like CONCAT('%',#{inName},'%')
+			</if>
+			<if test="inTime1!=null and inTime1!=''">
+				AND DATE_FORMAT(wi.createDate, '%Y-%m-%d')&gt;=#{inTime1}
+			</if>
+			<if test="inTime2!=null and inTime2!=''">
+				AND DATE_FORMAT(wi.createDate, '%Y-%m-%d')&lt;=#{inTime2}
+			</if>
+				AND wi.status='0' or wi.createUser=#{username}
+		</where>
+		group by id
+	</select>
+	<!-- 根据用户名查询角色 -->
+	<select id="queryRole" resultType="java.lang.String" parameterType="java.lang.String"
+	useCache="false" flushCache="true">
+		select
+			wu.u_role as role
+		from
+			w_user wu
+		where
+			wu.u_username=#{username}
+	</select>
+	<!-- 判断是否存在镜像 -->
+	<select id="queryImage" resultType="java.util.Map" parameterType="java.lang.String"
+	useCache="false" flushCache="true">
+		select
+			wi.repository as repository,
+			wi.tag as tag
+		from
+			w_image wi
+		where
+			wi.repository=#{repository}
+	</select>
+	<insert parameterType="cn.tedu.store.bean.Image" id="addinstock">
+		insert into
+		w_image
+		(status,repository,tag,imageId,size,download,downorder,createUser,createDate)
+values(#{status},#{repository},#{tag},#{imageId},#{size},'0',#{downorder},#{createUser},#{createDate})
+	</insert>
+	<!-- 通过id查询镜像命令 -->
+	<select id="queryOrderByid" resultType="java.lang.String" parameterType="java.lang.String"
+	useCache="false" flushCache="true">
+		select
+			downorder as downorder
+		from
+			w_image
+		where
+			id=#{id}
+	</select>
+	
+	<!-- 通过id增加镜像下载次数-->
+	<update id="addTime" parameterType="java.lang.String">
+		update
+			w_image
+		set
+			download=(download+1)
+		where
+			id=#{id}
+	</update>
+	<!-- 删除镜像（w_image表） -->  
+	<delete id="delMainInstockById" parameterType="java.lang.Integer">  
+		delete from w_image  where id= #{insid2}
+	</delete> 
+	<!-- 批量删除镜像-->
+	<delete id="delMainInsstockById"  parameterType="java.util.List">
+         delete from w_image where id in ( 
+         <foreach collection="ids2" item="id" separator=",">
+            #{id}
+        </foreach>)
+	</delete>
+	
+	
+	
+	<!-- id查询镜像详细-->
+	<select id="queryinstockById" resultType="java.util.Map" parameterType="java.lang.String"
+		useCache="false" flushCache="true">
+		select
+			wi.id as id,
+			wi.repository as repository,
+			wi.tag as tag,
+			wi.imageId as imageId,
+			wi.size as size,
+			wi.download as download,
+			wi.downorder as downorder
+		from
+			w_image wi
+		where 
+			wi.id= #{id}
+	</select>
+	<!-- 更新镜像-->
+	<update id="updateimage" parameterType="cn.tedu.store.bean.Image">
+		update
+			w_image
+		set
+			size=#{size},
+			downorder=#{downorder},
+			updateDate =now()
+		where
+		    id =#{id}
+	</update>
+	<!-- <insert parameterType="cn.tedu.store.bean.Instock" id="addinstock">
+		insert into
+		w_instock
+		(in_name,in_type,in_specifications,in_cost,in_pricing,
+		in_qty,in_manufacturers,in_updatetime,in_createtime
+		)
+		values(#{inName},'主乐器',#{inSpecifications},
+		#{inCost},#{inPricing},#{inQty},#{inManufacturers},
+		now(),now())
+	</insert> -->
+	<!-- <insert parameterType="cn.tedu.store.bean.Instock" id="addpartsinstock">
+		insert into
+		w_instock
+		(in_name,in_type,in_specifications,in_cost,in_pricing,
+		in_qty,in_manufacturers,in_updatetime,in_createtime
+		)
+		values(#{inName},'配件',#{inSpecifications},
+		#{inCost},#{inPricing},#{inQty},#{inManufacturers},now(),now())
+	</insert> -->
+	<!-- <select id="queryByName" parameterType="cn.tedu.store.bean.Instock" resultType="java.util.Map">
+		select
+		id as id,
+		ins_name as inName,
+		ins_qty as inQty
+		from
+		w_instrument_information
+		where
+		ins_name=#{inName} and ins_specifications=#{inSpecifications} and ins_manufacturers=#{inManufacturers}
+	</select> -->
+	<!-- <select id="querypartsByName" parameterType="cn.tedu.store.bean.Instock" resultType="java.util.Map">
+		select
+		id as id,
+		parts_name as inName,
+		parts_qty as inQty
+		from
+		w_parts
+		where
+		parts_name=#{inName} and parts_specifications=#{inSpecifications} and parts_manufacturers=#{inManufacturers}
+	</select> -->
+	<!-- <insert parameterType="cn.tedu.store.bean.Instock" id="insertInfo">
+		insert into
+		w_instrument_information
+		(ins_name,ins_type,ins_specifications,ins_cost,ins_pricing,
+		ins_qty,ins_manufacturers,ins_updatetime,ins_createtime
+		)
+		values(#{inName},'主乐器',#{inSpecifications},
+		#{inCost},#{inPricing},#{inQty},#{inManufacturers},
+		now(),now())
+	</insert> -->
+	<!-- <insert parameterType="cn.tedu.store.bean.Instock" id="insertpartsInfo">
+		insert into
+		w_parts
+		(parts_name,parts_type,parts_specifications,parts_cost,parts_pricing,
+		parts_qty,parts_manufacturers,parts_updatetime,parts_createtime
+		)
+		values(#{inName},'配件',#{inSpecifications},
+		#{inCost},#{inPricing},#{inQty},#{inManufacturers},
+		now(),now())
+	</insert> -->
+	<!-- <update id="updateoldinfo" parameterType="cn.tedu.store.bean.Instock">
+		update
+			w_instrument_information
+		set
+			ins_qty =#{inQty},
+			ins_cost=#{inCost},
+			ins_pricing=#{inPricing},
+			ins_updatetime=now()
+		where
+			ins_name=#{inName}
+	</update> -->
+	<!-- <update id="updateoldpartsinfo" parameterType="cn.tedu.store.bean.Instock">
+		update
+			w_parts
+		set
+			parts_qty =#{inQty},
+			parts_cost=#{inCost},
+			parts_pricing=#{inPricing},
+			parts_updatetime=now()
+		where
+			parts_name=#{inName}
+	</update>
+	<select id="querypartsqty" parameterType="cn.tedu.store.bean.Instock" resultType="java.lang.Integer">
+		select
+		in_qty as inQty
+		from
+		w_instock
+		where
+		id=#{id} 
+	</select> -->
+	<!-- <insert id="insertInfoBatch" parameterType="java.util.List">
+        insert into w_instock (in_name,in_type,in_specifications,in_cost,in_pricing,
+		in_qty,in_manufacturers,in_updatetime,in_createtime
+		)
+        values
+        <foreach collection="list" item="item" index="index" separator=",">
+          (#{inName},'配件',#{inSpecifications},
+		#{inCost},#{inPricing},#{inQty},#{inManufacturers},now(),now())
+        </foreach>
+    </insert> -->
+    <!-- <select id="querypartsbean" parameterType="cn.tedu.store.bean.Instock" resultType="cn.tedu.store.bean.Instock">
+		select
+		wi.id as id,
+		wi.in_name as inName,
+		wi.in_type as inType,
+		wi.in_specifications as inSpecifications,
+		wi.in_cost as inCost,
+		wi.in_qty as inQty,
+		wi.in_pricing as inPricing,
+		wi.in_manufacturers as inManufacturers
+		from
+		w_instock wi
+		where
+		id=#{insid2} 
+	</select>
+    删除乐器（乐器表）  
+	<delete id="delMain" parameterType="cn.tedu.store.bean.Instock">  
+		delete from w_instrument_information  where ins_name=#{inName} and ins_specifications=#{inSpecifications} and ins_manufacturers=#{inManufacturers}
+	</delete>  -->
+    <!-- 删除乐器（配件表） -->  
+	<!-- <delete id="delPart" parameterType="cn.tedu.store.bean.Instock">  
+		delete from w_parts  where parts_name=#{inName} and parts_specifications=#{inSpecifications} and parts_manufacturers=#{inManufacturers}
+	</delete>  -->
+</mapper>
+
+		
+	
+	
+	
+	
+	
+	
+	
+	

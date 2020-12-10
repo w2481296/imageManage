@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+	<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" 
+		"http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper namespace="cn.tedu.store.mapper.TotalMapper">
+	
+	<!-- 首页信息 -->
+	<select id="privatetop" resultType="java.util.Map" useCache="false" flushCache="true">
+		SELECT
+			sum(download) AS download,
+			repository AS repository,
+			status as status,
+			tag AS tag
+		FROM
+			w_image
+		WHERE
+			STATUS = '1'
+		GROUP BY
+			repository,tag
+		ORDER BY
+			download DESC
+		LIMIT 5
+	</select>
+	<select id="publictop" resultType="java.util.Map" useCache="false" flushCache="true">
+		SELECT
+			sum(download) AS download,
+			repository AS repository,
+			status as status,
+			tag AS tag
+		FROM
+			w_image
+		WHERE
+			STATUS = '0'
+		GROUP BY
+			repository,tag
+		ORDER BY
+			download DESC
+		LIMIT 5
+	</select>
+	<select id="imageNum" resultType="java.util.Map" useCache="false" flushCache="true">
+		SELECT
+			count(id) AS imagesum
+		FROM
+			w_image 
+	</select>
+	<select id="downToday" resultType="java.util.Map" useCache="false" flushCache="true">
+		SELECT
+			sum(download) AS downloadsum
+		FROM
+			w_image
+		WHERE
+			DATE_FORMAT(createDate, '%Y-%m-%d') = '2020-07-10'
+	</select>
+</mapper>
+
+		
+	
+	
+	
+	
+	
+	
+	
+	
